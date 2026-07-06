@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($response = Invoke-WebRequest -Uri \"https://api.frankfurter.app/latest?amount=100&from=GBP&to=USD,EUR\" -Headers @{\"Origin\"=\"null\"}; $response.Headers | Format-Table -AutoSize)",
+      "PowerShell($response = Invoke-WebRequest -Uri \"https://api.frankfurter.app/latest?amount=100&from=GBP&to=USD,EUR\" -UseBasicParsing; $response.Headers | Format-Table -AutoSize)",
+      "PowerShell(wsl bash -c \"cd /home/bram/essiell_project && nohup python3 -m http.server 8765 > /tmp/server.log 2>&1 & sleep 1 && cat /tmp/server.log; echo STARTED\")",
+      "PowerShell(Start-Sleep -Seconds 1; try { Invoke-WebRequest -Uri \"http://localhost:8765/index.html\" -UseBasicParsing | Select-Object -ExpandProperty StatusCode } catch { Write-Output \"FAILED: $_\" })",
+      "PowerShell(Start-Process \"http://localhost:8765/index.html\")",
+      "PowerShell(Get-CimInstance -Namespace \"root/SecurityCenter2\" -ClassName AntiVirusProduct -ErrorAction SilentlyContinue)",
+      "PowerShell(wsl bash -c \"pkill -f 'http.server 8765'; sleep 1; cd /home/bram/essiell_project && nohup python3 server.py > /tmp/server.log 2>&1 & sleep 1 && cat /tmp/server.log\")",
+      "PowerShell(wsl bash -c \"cat /tmp/server.log; echo '---'; ps aux | grep server.py\")",
+      "PowerShell(wsl bash -c \"fuser -k 8765/tcp 2>/dev/null; sleep 1; echo done\")",
+      "PowerShell(wsl bash -c \"cd /home/bram/essiell_project && nohup python3 server.py > /tmp/server.log 2>&1 & disown; sleep 1; cat /tmp/server.log\")",
+      "PowerShell(wsl bash -c \"cat /tmp/server.log\")",
+      "PowerShell(wsl bash -c \"ps aux | grep server.py | grep -v grep; echo '---log---'; cat /tmp/server.log\")",
+      "PowerShell(wsl bash -c \"fuser -k 8765/tcp 2>/dev/null; sleep 1; cd /home/bram/essiell_project && nohup python3 server.py > /tmp/server.log 2>&1 & disown; sleep 1; echo done\")",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8765/api/convert?amount=1&from=GBP&to=USD,EUR,JPY,THB,AUD,CAD\" -UseBasicParsing)"
+    ]
+  }
+}

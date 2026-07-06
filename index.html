@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currency Converter</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card-bg: #ffffff;
+    --border: #e2e6ea;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --row-alt: #f9fafb;
+    --highlight-bg: #eff6ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 16px;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+  }
+
+  .card {
+    width: 100%;
+    max-width: 560px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    margin: 0 0 24px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  select, input {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--card-bg);
+    color: var(--text);
+  }
+
+  select:focus, input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    min-width: 420px;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  thead th:not(:first-child), tbody td:not(:first-child) {
+    text-align: right;
+  }
+
+  tbody td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr:nth-child(even) {
+    background: var(--row-alt);
+  }
+
+  tbody tr.base-row {
+    background: var(--highlight-bg);
+    font-weight: 600;
+  }
+
+  .currency-code {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .status {
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    min-height: 1.2em;
+  }
+
+  .status.error {
+    color: #dc2626;
+  }
+
+  @media (max-width: 480px) {
+    body {
+      padding: 16px 8px;
+      align-items: stretch;
+    }
+
+    .card {
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+    }
+
+    .controls {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    select, input {
+      font-size: 16px;
+    }
+
+    table {
+      min-width: 0;
+      font-size: 0.85rem;
+    }
+
+    thead th, tbody td {
+      padding: 8px 6px;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --card-bg: #1a1d23;
+      --border: #2b2f38;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --row-alt: #16181d;
+      --highlight-bg: #1e293b;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Currency Converter</h1>
+    <p class="subtitle">Live exchange rates from Frankfurter (ECB reference rates)</p>
+
+    <div class="controls">
+      <div class="field">
+        <label for="base-currency">From</label>
+        <select id="base-currency">
+          <option value="GBP">GBP — British Pound</option>
+          <option value="USD">USD — US Dollar</option>
+          <option value="EUR">EUR — Euro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" value="100" min="0" step="any">
+      </div>
+    </div>
+
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Currency</th>
+          <th>Exchange Rate</th>
+          <th>Converted Amount</th>
+        </tr>
+      </thead>
+      <tbody id="results-body">
+      </tbody>
+    </table>
+    </div>
+
+    <p class="status" id="status"></p>
+  </div>
+
+  <script>
+    const TARGET_CURRENCIES = ["GBP", "USD", "EUR", "JPY", "THB", "AUD", "CAD"];
+    const NO_DECIMAL_CURRENCIES = new Set(["JPY"]);
+
+    const baseSelect = document.getElementById("base-currency");
+    const amountInput = document.getElementById("amount");
+    const resultsBody = document.getElementById("results-body");
+    const statusEl = document.getElementById("status");
+
+    let debounceTimer = null;
+
+    function formatAmount(value, currency) {
+      const decimals = NO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2;
+      return value.toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function formatRate(rate) {
+      return rate.toLocaleString(undefined, {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 6
+      });
+    }
+
+    function renderRows(baseCurrency, amount, rates) {
+      resultsBody.innerHTML = "";
+      TARGET_CURRENCIES.forEach(code => {
+        const tr = document.createElement("tr");
+        const rate = code === baseCurrency ? 1 : rates[code];
+        const value = typeof rate === "number" ? rate * amount : undefined;
+
+        if (code === baseCurrency) {
+          tr.classList.add("base-row");
+        }
+
+        const codeCell = document.createElement("td");
+        codeCell.className = "currency-code";
+        codeCell.textContent = code;
+
+        const rateCell = document.createElement("td");
+        rateCell.textContent = typeof rate === "number" ? formatRate(rate) : "—";
+
+        const valueCell = document.createElement("td");
+        valueCell.textContent = typeof value === "number"
+          ? formatAmount(value, code)
+          : "—";
+
+        tr.appendChild(codeCell);
+        tr.appendChild(rateCell);
+        tr.appendChild(valueCell);
+        resultsBody.appendChild(tr);
+      });
+    }
+
+    async function updateConversion() {
+      const baseCurrency = baseSelect.value;
+      const amount = parseFloat(amountInput.value);
+
+      if (isNaN(amount) || amount < 0) {
+        statusEl.textContent = "Enter a valid, non-negative amount.";
+        statusEl.classList.add("error");
+        resultsBody.innerHTML = "";
+        return;
+      }
+
+      const targets = TARGET_CURRENCIES.filter(c => c !== baseCurrency);
+      const url = `/api/convert?amount=1&from=${baseCurrency}&to=${targets.join(",")}`;
+
+      statusEl.classList.remove("error");
+      statusEl.textContent = "Fetching live rates…";
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`API responded with status ${response.status}`);
+        }
+        const data = await response.json();
+        renderRows(baseCurrency, amount, data.rates);
+        statusEl.textContent = `Rates as of ${data.date} (source: Frankfurter / ECB)`;
+      } catch (err) {
+        statusEl.textContent = `Could not fetch rates: ${err.message}`;
+        statusEl.classList.add("error");
+      }
+    }
+
+    function scheduleUpdate() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(updateConversion, 300);
+    }
+
+    baseSelect.addEventListener("change", updateConversion);
+    amountInput.addEventListener("input", scheduleUpdate);
+
+    updateConversion();
+  </script>
+</body>
+</html>
