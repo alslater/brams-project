@@ -690,6 +690,7 @@
     let debounceTimer = null;
     let lastFetch = null;
     let lastTrendBase = null;
+    let lastTrendDate = null;
     let lastTrendMap = null;
 
     function getSortedCodes(baseCurrency, amount, rates, sortMode) {
@@ -908,9 +909,10 @@
         }
         const data = await response.json();
 
-        if (baseCurrency !== lastTrendBase) {
+        if (baseCurrency !== lastTrendBase || data.date !== lastTrendDate) {
           lastTrendMap = await fetchTrendMap(baseCurrency, targets, data.date);
           lastTrendBase = baseCurrency;
+          lastTrendDate = data.date;
         }
 
         lastFetch = { baseCurrency, amount, rates: data.rates, trendMap: lastTrendMap, date: data.date };
