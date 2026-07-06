@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat /tmp/server.log; echo \"---\"; ps aux | grep server.py | grep -v grep)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"http://localhost:8765/api/convert?amount=1&from=GBP&to=USD,EUR,JPY\")",
+      "Bash(curl -s \"http://localhost:8765/api/history?from=GBP&to=USD,EUR,JPY&end=2026-07-03&days=10\")",
+      "Bash(curl -s http://localhost:8765/index.html)",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s \"http://localhost:8765/api/history?from=GBP&to=JPY&end=2026-07-03&days=7\")"
+    ]
+  }
+}

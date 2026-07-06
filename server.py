@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+import datetime
 import json
 import urllib.request
 import urllib.error
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
-FRANKFURTER_BASE = "https://api.frankfurter.app/latest"
+FRANKFURTER_ROOT = "https://api.frankfurter.app"
+FRANKFURTER_BASE = f"{FRANKFURTER_ROOT}/latest"
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -16,6 +18,10 @@ class Handler(SimpleHTTPRequestHandler):
             self.handle_convert(parse_qs(parsed.query))
             return
 
+        if parsed.path == "/api/history":
+            self.handle_history(parse_qs(parsed.query))
+            return
+
         super().do_GET()
 
     def handle_convert(self, query):
@@ -24,7 +30,31 @@ class Handler(SimpleHTTPRequestHandler):
         to = query.get("to", [""])[0]
 
         upstream_url = f"{FRANKFURTER_BASE}?amount={amount}&from={base}&to={to}"
+        self.proxy_json(upstream_url)
 
+    def handle_history(self, query):
+        base = query.get("from", ["USD"])[0]
+        to = query.get("to", [""])[0]
+        end = query.get("end", [""])[0]
+        days = query.get("days", ["10"])[0]
+
+        try:
+            end_date = datetime.date.fromisoformat(end)
+            start_date = end_date - datetime.timedelta(days=int(days))
+        except ValueError:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "invalid end/days parameter"}).encode())
+            return
+
+        upstream_url = (
+            f"{FRANKFURTER_ROOT}/{start_date.isoformat()}..{end_date.isoformat()}"
+            f"?from={base}&to={to}"
+        )
+        self.proxy_json(upstream_url)
+
+    def proxy_json(self, upstream_url):
         req = urllib.request.Request(
             upstream_url,
             headers={"User-Agent": "Mozilla/5.0 (compatible; currency-converter-proxy/1.0)"},

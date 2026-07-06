@@ -15,6 +15,8 @@
     --accent-hover: #1d4ed8;
     --row-alt: #f9fafb;
     --highlight-bg: #eff6ff;
+    --trend-up: #16a34a;
+    --trend-down: #dc2626;
   }
 
   * { box-sizing: border-box; }
@@ -54,15 +56,22 @@
 
   .controls {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 24px;
   }
 
   .field {
-    flex: 1;
+    flex: 1 1 140px;
+    min-width: 140px;
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+
+  .sort-field {
+    max-width: 220px;
+    margin-bottom: 24px;
   }
 
   label {
@@ -108,8 +117,21 @@
     letter-spacing: 0.03em;
   }
 
-  thead th:not(:first-child), tbody td:not(:first-child) {
+  thead th:nth-child(n+3), tbody td:nth-child(n+3) {
     text-align: right;
+  }
+
+  .flag-col, .currency-flag {
+    width: 1%;
+    padding-right: 0;
+  }
+
+  .currency-flag img {
+    display: block;
+    width: 24px;
+    height: 18px;
+    border-radius: 2px;
+    object-fit: cover;
   }
 
   tbody td {
@@ -129,6 +151,56 @@
   .currency-code {
     font-weight: 600;
     letter-spacing: 0.02em;
+  }
+
+  .rate-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .trend {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .trend-up {
+    color: var(--trend-up);
+  }
+
+  .trend-down {
+    color: var(--trend-down);
+  }
+
+  .trend-flat {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .copyable {
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .copyable:hover {
+    background-color: var(--highlight-bg);
+  }
+
+  .copyable:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent) inset;
+  }
+
+  .copyable.copied {
+    color: var(--trend-up);
+    font-weight: 600;
+  }
+
+  .copyable.copy-error {
+    color: var(--trend-down);
+    font-weight: 600;
   }
 
   .status {
@@ -162,6 +234,15 @@
       gap: 16px;
     }
 
+    .field {
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+
+    .sort-field {
+      max-width: none;
+    }
+
     select, input {
       font-size: 16px;
     }
@@ -187,22 +268,205 @@
       --accent-hover: #60a5fa;
       --row-alt: #16181d;
       --highlight-bg: #1e293b;
+      --trend-up: #4ade80;
+      --trend-down: #f87171;
     }
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f4f6f8;
+    --card-bg: #ffffff;
+    --border: #e2e6ea;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --row-alt: #f9fafb;
+    --highlight-bg: #eff6ff;
+    --trend-up: #16a34a;
+    --trend-down: #dc2626;
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0f1115;
+    --card-bg: #1a1d23;
+    --border: #2b2f38;
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+    --accent: #3b82f6;
+    --accent-hover: #60a5fa;
+    --row-alt: #16181d;
+    --highlight-bg: #1e293b;
+    --trend-up: #4ade80;
+    --trend-down: #f87171;
+  }
+
+  .header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .theme-toggle {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--accent);
+  }
+
+  .theme-toggle:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  tbody tr.currency-row {
+    cursor: pointer;
+  }
+
+  tbody tr.currency-row:hover {
+    background-color: var(--highlight-bg);
+  }
+
+  tbody tr.currency-row:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent) inset;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1000;
+  }
+
+  .modal-backdrop.hidden {
+    display: none;
+  }
+
+  .modal-panel {
+    width: 100%;
+    max-width: 400px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .modal-title {
+    margin: 0 0 2px;
+    font-size: 1.1rem;
+  }
+
+  .modal-subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .modal-close {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .modal-close:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .chart-grid {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  .chart-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+
+  .chart-point {
+    fill: var(--accent);
+  }
+
+  .chart-axis-label {
+    font-size: 9px;
+    fill: var(--text-muted);
+  }
+
+  .chart-status {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .chart-status.error {
+    color: var(--trend-down);
   }
 </style>
 </head>
 <body>
   <div class="card">
-    <h1>Currency Converter</h1>
-    <p class="subtitle">Live exchange rates from Frankfurter (ECB reference rates)</p>
+    <div class="header-row">
+      <div>
+        <h1>Currency Converter</h1>
+        <p class="subtitle">Live exchange rates from Frankfurter (ECB reference rates)</p>
+      </div>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode"></button>
+    </div>
 
     <div class="controls">
       <div class="field">
         <label for="base-currency">From</label>
         <select id="base-currency">
+          <option value="EUR">EUR — Euro</option>
           <option value="GBP">GBP — British Pound</option>
           <option value="USD">USD — US Dollar</option>
-          <option value="EUR">EUR — Euro</option>
         </select>
       </div>
       <div class="field">
@@ -211,10 +475,19 @@
       </div>
     </div>
 
+    <div class="field sort-field">
+      <label for="sort-mode">Sort by</label>
+      <select id="sort-mode">
+        <option value="alpha">Currency (A–Z)</option>
+        <option value="value">Value (High–Low)</option>
+      </select>
+    </div>
+
     <div class="table-wrap">
     <table>
       <thead>
         <tr>
+          <th class="flag-col"></th>
           <th>Currency</th>
           <th>Exchange Rate</th>
           <th>Converted Amount</th>
@@ -228,16 +501,210 @@
     <p class="status" id="status"></p>
   </div>
 
+  <div class="modal-backdrop hidden" id="chart-modal">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="chart-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="chart-title"></h2>
+          <p class="modal-subtitle">Last 7 days</p>
+        </div>
+        <button type="button" class="modal-close" id="chart-close" aria-label="Close chart">×</button>
+      </div>
+      <div id="chart-body"></div>
+    </div>
+  </div>
+
   <script>
-    const TARGET_CURRENCIES = ["GBP", "USD", "EUR", "JPY", "THB", "AUD", "CAD"];
+    const TARGET_CURRENCIES = ["AUD", "CAD", "EUR", "GBP", "JPY", "THB", "USD"];
     const NO_DECIMAL_CURRENCIES = new Set(["JPY"]);
+    const CURRENCY_FLAGS = {
+      AUD: "au",
+      CAD: "ca",
+      EUR: "eu",
+      GBP: "gb",
+      JPY: "jp",
+      THB: "th",
+      USD: "us"
+    };
 
     const baseSelect = document.getElementById("base-currency");
     const amountInput = document.getElementById("amount");
+    const sortSelect = document.getElementById("sort-mode");
+    const themeToggle = document.getElementById("theme-toggle");
     const resultsBody = document.getElementById("results-body");
     const statusEl = document.getElementById("status");
 
+    const THEME_KEY = "currency-converter-theme";
+    const darkMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+      themeToggle.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      applyTheme(saved || (darkMediaQuery.matches ? "dark" : "light"));
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+    });
+
+    darkMediaQuery.addEventListener("change", e => {
+      if (!localStorage.getItem(THEME_KEY)) {
+        applyTheme(e.matches ? "dark" : "light");
+      }
+    });
+
+    initTheme();
+
+    const chartModal = document.getElementById("chart-modal");
+    const chartTitle = document.getElementById("chart-title");
+    const chartBody = document.getElementById("chart-body");
+    const chartClose = document.getElementById("chart-close");
+
+    function openChartModal() {
+      chartModal.classList.remove("hidden");
+    }
+
+    function closeChartModal() {
+      chartModal.classList.add("hidden");
+    }
+
+    chartClose.addEventListener("click", closeChartModal);
+    chartModal.addEventListener("click", e => {
+      if (e.target === chartModal) closeChartModal();
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !chartModal.classList.contains("hidden")) {
+        closeChartModal();
+      }
+    });
+
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    function svgEl(tag, attrs) {
+      const el = document.createElementNS(SVG_NS, tag);
+      Object.entries(attrs || {}).forEach(([key, val]) => el.setAttribute(key, val));
+      return el;
+    }
+
+    function formatShortDate(dateStr) {
+      const date = new Date(`${dateStr}T00:00:00`);
+      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+
+    function buildRateChart(points) {
+      const width = 320;
+      const height = 180;
+      const padding = { top: 16, right: 16, bottom: 24, left: 52 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+
+      const rateValues = points.map(p => p.rate);
+      let minRate = Math.min(...rateValues);
+      let maxRate = Math.max(...rateValues);
+      if (minRate === maxRate) {
+        const pad = minRate === 0 ? 1 : Math.abs(minRate) * 0.01;
+        minRate -= pad;
+        maxRate += pad;
+      }
+
+      const xStep = points.length > 1 ? plotWidth / (points.length - 1) : 0;
+      const coords = points.map((p, i) => ({
+        date: p.date,
+        rate: p.rate,
+        x: padding.left + i * xStep,
+        y: padding.top + plotHeight - ((p.rate - minRate) / (maxRate - minRate)) * plotHeight
+      }));
+
+      const svg = svgEl("svg", { viewBox: `0 0 ${width} ${height}`, class: "chart-svg" });
+
+      [minRate, maxRate].forEach((val, idx) => {
+        const y = padding.top + (idx === 0 ? plotHeight : 0);
+        svg.appendChild(svgEl("line", {
+          x1: padding.left, x2: width - padding.right, y1: y, y2: y, class: "chart-grid"
+        }));
+        const label = svgEl("text", { x: padding.left - 8, y: y + 3, class: "chart-axis-label", "text-anchor": "end" });
+        label.textContent = formatRate(val);
+        svg.appendChild(label);
+      });
+
+      svg.appendChild(svgEl("polyline", {
+        points: coords.map(c => `${c.x},${c.y}`).join(" "),
+        class: "chart-line"
+      }));
+
+      coords.forEach(c => {
+        const circle = svgEl("circle", { cx: c.x, cy: c.y, r: 3, class: "chart-point" });
+        const title = svgEl("title", {});
+        title.textContent = `${formatShortDate(c.date)}: ${formatRate(c.rate)}`;
+        circle.appendChild(title);
+        svg.appendChild(circle);
+      });
+
+      const firstLabel = svgEl("text", { x: padding.left, y: height - 4, class: "chart-axis-label", "text-anchor": "start" });
+      firstLabel.textContent = formatShortDate(coords[0].date);
+      svg.appendChild(firstLabel);
+
+      const lastLabel = svgEl("text", { x: width - padding.right, y: height - 4, class: "chart-axis-label", "text-anchor": "end" });
+      lastLabel.textContent = formatShortDate(coords[coords.length - 1].date);
+      svg.appendChild(lastLabel);
+
+      return svg;
+    }
+
+    async function showRateChart(baseCurrency, code, endDate) {
+      chartTitle.textContent = `${baseCurrency} → ${code}`;
+      chartBody.innerHTML = `<p class="chart-status">Loading chart…</p>`;
+      openChartModal();
+
+      try {
+        const url = `/api/history?from=${baseCurrency}&to=${code}&end=${endDate}&days=7`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`API responded with status ${response.status}`);
+        }
+        const data = await response.json();
+        const points = Object.keys(data.rates || {})
+          .sort()
+          .map(date => ({ date, rate: data.rates[date][code] }))
+          .filter(p => typeof p.rate === "number");
+
+        if (points.length < 2) {
+          chartBody.innerHTML = `<p class="chart-status">Not enough data to plot a chart.</p>`;
+          return;
+        }
+
+        chartBody.innerHTML = "";
+        chartBody.appendChild(buildRateChart(points));
+      } catch (err) {
+        chartBody.innerHTML = `<p class="chart-status error">Could not load chart: ${err.message}</p>`;
+      }
+    }
+
     let debounceTimer = null;
+    let lastFetch = null;
+    let lastTrendBase = null;
+    let lastTrendMap = null;
+
+    function getSortedCodes(baseCurrency, amount, rates, sortMode) {
+      const codes = [...TARGET_CURRENCIES];
+      if (sortMode === "value") {
+        codes.sort((a, b) => {
+          const rateA = a === baseCurrency ? 1 : rates[a];
+          const rateB = b === baseCurrency ? 1 : rates[b];
+          const valueA = typeof rateA === "number" ? rateA * amount : -Infinity;
+          const valueB = typeof rateB === "number" ? rateB * amount : -Infinity;
+          return valueB - valueA;
+        });
+      }
+      return codes;
+    }
 
     function formatAmount(value, currency) {
       const decimals = NO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2;
@@ -254,15 +721,119 @@
       });
     }
 
-    function renderRows(baseCurrency, amount, rates) {
+    const TREND_FLAT_THRESHOLD = 0.05;
+
+    function buildTrendBadge(currentRate, previousRate) {
+      const percentChange = ((currentRate - previousRate) / previousRate) * 100;
+      const badge = document.createElement("span");
+
+      if (Math.abs(percentChange) < TREND_FLAT_THRESHOLD) {
+        badge.className = "trend trend-flat";
+        badge.textContent = "▬ flat";
+      } else if (percentChange > 0) {
+        badge.className = "trend trend-up";
+        badge.textContent = `▲ ${percentChange.toFixed(2)}%`;
+      } else {
+        badge.className = "trend trend-down";
+        badge.textContent = `▼ ${Math.abs(percentChange).toFixed(2)}%`;
+      }
+
+      badge.title = "vs. previous trading day";
+      return badge;
+    }
+
+    async function fetchTrendMap(baseCurrency, targets, endDate) {
+      if (!targets.length) return {};
+
+      const url = `/api/history?from=${baseCurrency}&to=${targets.join(",")}&end=${endDate}&days=10`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const data = await response.json();
+        const priorDates = Object.keys(data.rates || {})
+          .filter(d => d < endDate)
+          .sort();
+        if (!priorDates.length) return null;
+        return data.rates[priorDates[priorDates.length - 1]];
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise((resolve, reject) => {
+        try {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          const ok = document.execCommand("copy");
+          document.body.removeChild(textarea);
+          ok ? resolve() : reject(new Error("execCommand failed"));
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
+    function handleCopyClick(cell, text) {
+      clearTimeout(cell._copyResetTimer);
+      copyText(text)
+        .then(() => {
+          cell.textContent = "Copied!";
+          cell.classList.add("copied");
+        })
+        .catch(() => {
+          cell.textContent = "Copy failed";
+          cell.classList.add("copy-error");
+        })
+        .finally(() => {
+          cell._copyResetTimer = setTimeout(() => {
+            cell.textContent = text;
+            cell.classList.remove("copied", "copy-error");
+          }, 1000);
+        });
+    }
+
+    function renderRows(baseCurrency, amount, rates, trendMap) {
       resultsBody.innerHTML = "";
-      TARGET_CURRENCIES.forEach(code => {
+      const codes = getSortedCodes(baseCurrency, amount, rates, sortSelect.value);
+      codes.forEach(code => {
         const tr = document.createElement("tr");
         const rate = code === baseCurrency ? 1 : rates[code];
         const value = typeof rate === "number" ? rate * amount : undefined;
 
         if (code === baseCurrency) {
           tr.classList.add("base-row");
+        } else {
+          tr.classList.add("currency-row");
+          tr.tabIndex = 0;
+          tr.setAttribute("role", "button");
+          tr.title = `View ${baseCurrency} → ${code} rate history`;
+          tr.addEventListener("click", () => showRateChart(baseCurrency, code, lastFetch ? lastFetch.date : undefined));
+          tr.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              showRateChart(baseCurrency, code, lastFetch ? lastFetch.date : undefined);
+            }
+          });
+        }
+
+        const flagCell = document.createElement("td");
+        flagCell.className = "currency-flag";
+        const countryCode = CURRENCY_FLAGS[code];
+        if (countryCode) {
+          const flagImg = document.createElement("img");
+          flagImg.src = `https://flagcdn.com/24x18/${countryCode}.png`;
+          flagImg.alt = "";
+          flagCell.appendChild(flagImg);
         }
 
         const codeCell = document.createElement("td");
@@ -270,13 +841,42 @@
         codeCell.textContent = code;
 
         const rateCell = document.createElement("td");
-        rateCell.textContent = typeof rate === "number" ? formatRate(rate) : "—";
+        const rateWrap = document.createElement("div");
+        rateWrap.className = "rate-wrap";
+        const rateValue = document.createElement("span");
+        rateValue.textContent = typeof rate === "number" ? formatRate(rate) : "—";
+        rateWrap.appendChild(rateValue);
+
+        const previousRate = trendMap ? trendMap[code] : undefined;
+        if (code !== baseCurrency && typeof rate === "number" && typeof previousRate === "number") {
+          rateWrap.appendChild(buildTrendBadge(rate, previousRate));
+        }
+        rateCell.appendChild(rateWrap);
 
         const valueCell = document.createElement("td");
-        valueCell.textContent = typeof value === "number"
-          ? formatAmount(value, code)
-          : "—";
+        if (typeof value === "number") {
+          const displayValue = formatAmount(value, code);
+          valueCell.textContent = displayValue;
+          valueCell.classList.add("copyable");
+          valueCell.tabIndex = 0;
+          valueCell.setAttribute("role", "button");
+          valueCell.title = "Click to copy";
+          valueCell.addEventListener("click", e => {
+            e.stopPropagation();
+            handleCopyClick(valueCell, displayValue);
+          });
+          valueCell.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCopyClick(valueCell, displayValue);
+            }
+          });
+        } else {
+          valueCell.textContent = "—";
+        }
 
+        tr.appendChild(flagCell);
         tr.appendChild(codeCell);
         tr.appendChild(rateCell);
         tr.appendChild(valueCell);
@@ -307,7 +907,14 @@
           throw new Error(`API responded with status ${response.status}`);
         }
         const data = await response.json();
-        renderRows(baseCurrency, amount, data.rates);
+
+        if (baseCurrency !== lastTrendBase) {
+          lastTrendMap = await fetchTrendMap(baseCurrency, targets, data.date);
+          lastTrendBase = baseCurrency;
+        }
+
+        lastFetch = { baseCurrency, amount, rates: data.rates, trendMap: lastTrendMap, date: data.date };
+        renderRows(baseCurrency, amount, data.rates, lastTrendMap);
         statusEl.textContent = `Rates as of ${data.date} (source: Frankfurter / ECB)`;
       } catch (err) {
         statusEl.textContent = `Could not fetch rates: ${err.message}`;
@@ -320,8 +927,17 @@
       debounceTimer = setTimeout(updateConversion, 300);
     }
 
+    function handleSortChange() {
+      if (lastFetch) {
+        renderRows(lastFetch.baseCurrency, lastFetch.amount, lastFetch.rates, lastFetch.trendMap);
+      } else {
+        updateConversion();
+      }
+    }
+
     baseSelect.addEventListener("change", updateConversion);
     amountInput.addEventListener("input", scheduleUpdate);
+    sortSelect.addEventListener("change", handleSortChange);
 
     updateConversion();
   </script>

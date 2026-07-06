@@ -14,7 +14,22 @@
       "PowerShell(wsl bash -c \"cat /tmp/server.log\")",
       "PowerShell(wsl bash -c \"ps aux | grep server.py | grep -v grep; echo '---log---'; cat /tmp/server.log\")",
       "PowerShell(wsl bash -c \"fuser -k 8765/tcp 2>/dev/null; sleep 1; cd /home/bram/essiell_project && nohup python3 server.py > /tmp/server.log 2>&1 & disown; sleep 1; echo done\")",
-      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8765/api/convert?amount=1&from=GBP&to=USD,EUR,JPY,THB,AUD,CAD\" -UseBasicParsing)"
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8765/api/convert?amount=1&from=GBP&to=USD,EUR,JPY,THB,AUD,CAD\" -UseBasicParsing)",
+      "Bash(pkill -f 'server.py')",
+      "Bash(python3 server.py)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8765/index.html)",
+      "Bash(curl -s \"http://localhost:8765/api/convert?amount=1&from=EUR&to=GBP,USD\")",
+      "Bash(cat /tmp/server.log)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"index.html: %{http_code}\\\\n\" http://localhost:8765/index.html)",
+      "Bash(curl -s \"http://localhost:8765/api/convert?amount=1&from=EUR&to=GBP,USD,JPY\")",
+      "Bash(curl -s http://localhost:8765/index.html)",
+      "Bash(python3 -c \"import playwright\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://flagcdn.com/w40/eu.png\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://flagcdn.com/w40/gb.png\")",
+      "Bash(curl -s \"https://api.frankfurter.app/2026-06-25..2026-07-03?from=GBP&to=USD,EUR\")",
+      "Bash(curl -sL \"https://api.frankfurter.app/2026-06-25..2026-07-03?from=GBP&to=USD,EUR\")",
+      "Bash(python3 -c ' *)"
     ]
   }
 }
