@@ -17,6 +17,7 @@
     --highlight-bg: #eff6ff;
     --trend-up: #16a34a;
     --trend-down: #dc2626;
+    --review: #b45309;
   }
 
   * { box-sizing: border-box; }
@@ -243,6 +244,10 @@
       max-width: none;
     }
 
+    .screening-form {
+      grid-template-columns: 1fr;
+    }
+
     select, input {
       font-size: 16px;
     }
@@ -270,6 +275,7 @@
       --highlight-bg: #1e293b;
       --trend-up: #4ade80;
       --trend-down: #f87171;
+      --review: #fbbf24;
     }
   }
 
@@ -285,6 +291,7 @@
     --highlight-bg: #eff6ff;
     --trend-up: #16a34a;
     --trend-down: #dc2626;
+    --review: #b45309;
   }
 
   :root[data-theme="dark"] {
@@ -299,6 +306,7 @@
     --highlight-bg: #1e293b;
     --trend-up: #4ade80;
     --trend-down: #f87171;
+    --review: #fbbf24;
   }
 
   .header-row {
@@ -448,6 +456,144 @@
   .chart-status.error {
     color: var(--trend-down);
   }
+
+  .view-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .view-tab {
+    padding: 10px 4px;
+    margin-bottom: -1px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .view-tab:hover {
+    color: var(--text);
+  }
+
+  .view-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .view-tab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent) inset;
+  }
+
+  .view-panel.hidden {
+    display: none;
+  }
+
+  .screening-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .screening-form .field-full {
+    grid-column: 1 / -1;
+  }
+
+  .submit-btn {
+    grid-column: 1 / -1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .submit-btn:hover {
+    background: var(--accent-hover);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .screening-result.hidden {
+    display: none;
+  }
+
+  .outcome-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .outcome-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .outcome-label {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .outcome-banner.outcome-clear {
+    background: rgba(22, 163, 74, 0.12);
+    border-color: var(--trend-up);
+    color: var(--trend-up);
+  }
+
+  .outcome-banner.outcome-review {
+    background: rgba(217, 119, 6, 0.14);
+    border-color: var(--review);
+    color: var(--review);
+  }
+
+  .outcome-banner.outcome-blocked {
+    background: rgba(220, 38, 38, 0.12);
+    border-color: var(--trend-down);
+    color: var(--trend-down);
+  }
+
+  .outcome-banner.outcome-error {
+    background: rgba(107, 114, 128, 0.12);
+    border-color: var(--text-muted);
+    color: var(--text-muted);
+  }
+
+  .reasons-heading {
+    margin: 0 0 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+  }
+
+  .reasons-list {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 0.9rem;
+  }
+
+  .reasons-list li {
+    margin-bottom: 6px;
+  }
 </style>
 </head>
 <body>
@@ -460,45 +606,89 @@
       <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode"></button>
     </div>
 
-    <div class="controls">
-      <div class="field">
-        <label for="base-currency">From</label>
-        <select id="base-currency">
-          <option value="EUR">EUR — Euro</option>
-          <option value="GBP">GBP — British Pound</option>
-          <option value="USD">USD — US Dollar</option>
+    <div class="view-tabs" role="tablist" aria-label="View selector">
+      <button type="button" id="tab-rates" class="view-tab active" role="tab" aria-selected="true" aria-controls="rates-view">Exchange Rates</button>
+      <button type="button" id="tab-screening" class="view-tab" role="tab" aria-selected="false" aria-controls="screening-view">Screening</button>
+    </div>
+
+    <div id="rates-view" class="view-panel">
+      <div class="controls">
+        <div class="field">
+          <label for="base-currency">From</label>
+          <select id="base-currency">
+            <option value="EUR">EUR — Euro</option>
+            <option value="GBP">GBP — British Pound</option>
+            <option value="USD">USD — US Dollar</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="amount">Amount</label>
+          <input type="number" id="amount" value="100" min="0" step="any">
+        </div>
+      </div>
+
+      <div class="field sort-field">
+        <label for="sort-mode">Sort by</label>
+        <select id="sort-mode">
+          <option value="alpha">Currency (A–Z)</option>
+          <option value="value">Value (High–Low)</option>
         </select>
       </div>
-      <div class="field">
-        <label for="amount">Amount</label>
-        <input type="number" id="amount" value="100" min="0" step="any">
+
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="flag-col"></th>
+            <th>Currency</th>
+            <th>Exchange Rate</th>
+            <th>Converted Amount</th>
+          </tr>
+        </thead>
+        <tbody id="results-body">
+        </tbody>
+      </table>
+      </div>
+
+      <p class="status" id="status"></p>
+    </div>
+
+    <div id="screening-view" class="view-panel hidden">
+      <form id="screening-form" class="screening-form">
+        <div class="field">
+          <label for="customer-name">Customer name</label>
+          <input type="text" id="customer-name" name="customerName" autocomplete="off" required>
+        </div>
+        <div class="field">
+          <label for="nationality">Nationality</label>
+          <select id="nationality" name="nationality" required></select>
+        </div>
+        <div class="field">
+          <label for="screen-amount">Amount</label>
+          <input type="number" id="screen-amount" name="amount" min="0" step="any" required>
+        </div>
+        <div class="field">
+          <label for="screen-currency">Currency</label>
+          <select id="screen-currency" name="currency" required></select>
+        </div>
+        <div class="field field-full">
+          <label for="destination-country">Destination country</label>
+          <select id="destination-country" name="destinationCountry" required></select>
+        </div>
+        <button type="submit" class="submit-btn" id="screening-submit">Submit for screening</button>
+      </form>
+
+      <div id="screening-result" class="screening-result hidden" aria-live="polite">
+        <div class="outcome-banner" id="outcome-banner">
+          <span class="outcome-icon" id="outcome-icon" aria-hidden="true"></span>
+          <span class="outcome-label" id="outcome-label"></span>
+        </div>
+        <div>
+          <h3 class="reasons-heading">Reasons</h3>
+          <ul class="reasons-list" id="reasons-list"></ul>
+        </div>
       </div>
     </div>
-
-    <div class="field sort-field">
-      <label for="sort-mode">Sort by</label>
-      <select id="sort-mode">
-        <option value="alpha">Currency (A–Z)</option>
-        <option value="value">Value (High–Low)</option>
-      </select>
-    </div>
-
-    <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th class="flag-col"></th>
-          <th>Currency</th>
-          <th>Exchange Rate</th>
-          <th>Converted Amount</th>
-        </tr>
-      </thead>
-      <tbody id="results-body">
-      </tbody>
-    </table>
-    </div>
-
-    <p class="status" id="status"></p>
   </div>
 
   <div class="modal-backdrop hidden" id="chart-modal">
@@ -526,6 +716,108 @@
       THB: "th",
       USD: "us"
     };
+
+    // ISO 3166-1 alpha-3 country codes, used to populate the Nationality
+    // and Destination country dropdowns on the screening form.
+    const COUNTRIES = [
+      { code: "AFG", name: "Afghanistan" }, { code: "ALB", name: "Albania" },
+      { code: "DZA", name: "Algeria" }, { code: "AND", name: "Andorra" },
+      { code: "AGO", name: "Angola" }, { code: "ATG", name: "Antigua and Barbuda" },
+      { code: "ARG", name: "Argentina" }, { code: "ARM", name: "Armenia" },
+      { code: "AUS", name: "Australia" }, { code: "AUT", name: "Austria" },
+      { code: "AZE", name: "Azerbaijan" }, { code: "BHS", name: "Bahamas" },
+      { code: "BHR", name: "Bahrain" }, { code: "BGD", name: "Bangladesh" },
+      { code: "BRB", name: "Barbados" }, { code: "BLR", name: "Belarus" },
+      { code: "BEL", name: "Belgium" }, { code: "BLZ", name: "Belize" },
+      { code: "BEN", name: "Benin" }, { code: "BTN", name: "Bhutan" },
+      { code: "BOL", name: "Bolivia" }, { code: "BIH", name: "Bosnia and Herzegovina" },
+      { code: "BWA", name: "Botswana" }, { code: "BRA", name: "Brazil" },
+      { code: "BRN", name: "Brunei" }, { code: "BGR", name: "Bulgaria" },
+      { code: "BFA", name: "Burkina Faso" }, { code: "BDI", name: "Burundi" },
+      { code: "KHM", name: "Cambodia" }, { code: "CMR", name: "Cameroon" },
+      { code: "CAN", name: "Canada" }, { code: "CPV", name: "Cape Verde" },
+      { code: "CAF", name: "Central African Republic" }, { code: "TCD", name: "Chad" },
+      { code: "CHL", name: "Chile" }, { code: "CHN", name: "China" },
+      { code: "COL", name: "Colombia" }, { code: "COM", name: "Comoros" },
+      { code: "COG", name: "Congo" }, { code: "COD", name: "Congo (DRC)" },
+      { code: "CRI", name: "Costa Rica" }, { code: "HRV", name: "Croatia" },
+      { code: "CUB", name: "Cuba" }, { code: "CYP", name: "Cyprus" },
+      { code: "CZE", name: "Czech Republic" }, { code: "DNK", name: "Denmark" },
+      { code: "DJI", name: "Djibouti" }, { code: "DMA", name: "Dominica" },
+      { code: "DOM", name: "Dominican Republic" }, { code: "ECU", name: "Ecuador" },
+      { code: "EGY", name: "Egypt" }, { code: "SLV", name: "El Salvador" },
+      { code: "GNQ", name: "Equatorial Guinea" }, { code: "ERI", name: "Eritrea" },
+      { code: "EST", name: "Estonia" }, { code: "SWZ", name: "Eswatini" },
+      { code: "ETH", name: "Ethiopia" }, { code: "FJI", name: "Fiji" },
+      { code: "FIN", name: "Finland" }, { code: "FRA", name: "France" },
+      { code: "GAB", name: "Gabon" }, { code: "GMB", name: "Gambia" },
+      { code: "GEO", name: "Georgia" }, { code: "DEU", name: "Germany" },
+      { code: "GHA", name: "Ghana" }, { code: "GRC", name: "Greece" },
+      { code: "GRD", name: "Grenada" }, { code: "GTM", name: "Guatemala" },
+      { code: "GIN", name: "Guinea" }, { code: "GNB", name: "Guinea-Bissau" },
+      { code: "GUY", name: "Guyana" }, { code: "HTI", name: "Haiti" },
+      { code: "HND", name: "Honduras" }, { code: "HUN", name: "Hungary" },
+      { code: "ISL", name: "Iceland" }, { code: "IND", name: "India" },
+      { code: "IDN", name: "Indonesia" }, { code: "IRN", name: "Iran" },
+      { code: "IRQ", name: "Iraq" }, { code: "IRL", name: "Ireland" },
+      { code: "ISR", name: "Israel" }, { code: "ITA", name: "Italy" },
+      { code: "JAM", name: "Jamaica" }, { code: "JPN", name: "Japan" },
+      { code: "JOR", name: "Jordan" }, { code: "KAZ", name: "Kazakhstan" },
+      { code: "KEN", name: "Kenya" }, { code: "KIR", name: "Kiribati" },
+      { code: "PRK", name: "Korea, North" }, { code: "KOR", name: "Korea, South" },
+      { code: "KWT", name: "Kuwait" }, { code: "KGZ", name: "Kyrgyzstan" },
+      { code: "LAO", name: "Laos" }, { code: "LVA", name: "Latvia" },
+      { code: "LBN", name: "Lebanon" }, { code: "LSO", name: "Lesotho" },
+      { code: "LBR", name: "Liberia" }, { code: "LBY", name: "Libya" },
+      { code: "LIE", name: "Liechtenstein" }, { code: "LTU", name: "Lithuania" },
+      { code: "LUX", name: "Luxembourg" }, { code: "MDG", name: "Madagascar" },
+      { code: "MWI", name: "Malawi" }, { code: "MYS", name: "Malaysia" },
+      { code: "MDV", name: "Maldives" }, { code: "MLI", name: "Mali" },
+      { code: "MLT", name: "Malta" }, { code: "MHL", name: "Marshall Islands" },
+      { code: "MRT", name: "Mauritania" }, { code: "MUS", name: "Mauritius" },
+      { code: "MEX", name: "Mexico" }, { code: "FSM", name: "Micronesia" },
+      { code: "MDA", name: "Moldova" }, { code: "MCO", name: "Monaco" },
+      { code: "MNG", name: "Mongolia" }, { code: "MNE", name: "Montenegro" },
+      { code: "MAR", name: "Morocco" }, { code: "MOZ", name: "Mozambique" },
+      { code: "MMR", name: "Myanmar" }, { code: "NAM", name: "Namibia" },
+      { code: "NRU", name: "Nauru" }, { code: "NPL", name: "Nepal" },
+      { code: "NLD", name: "Netherlands" }, { code: "NZL", name: "New Zealand" },
+      { code: "NIC", name: "Nicaragua" }, { code: "NER", name: "Niger" },
+      { code: "NGA", name: "Nigeria" }, { code: "MKD", name: "North Macedonia" },
+      { code: "NOR", name: "Norway" }, { code: "OMN", name: "Oman" },
+      { code: "PAK", name: "Pakistan" }, { code: "PLW", name: "Palau" },
+      { code: "PAN", name: "Panama" }, { code: "PNG", name: "Papua New Guinea" },
+      { code: "PRY", name: "Paraguay" }, { code: "PER", name: "Peru" },
+      { code: "PHL", name: "Philippines" }, { code: "POL", name: "Poland" },
+      { code: "PRT", name: "Portugal" }, { code: "QAT", name: "Qatar" },
+      { code: "ROU", name: "Romania" }, { code: "RUS", name: "Russia" },
+      { code: "RWA", name: "Rwanda" }, { code: "KNA", name: "Saint Kitts and Nevis" },
+      { code: "LCA", name: "Saint Lucia" }, { code: "VCT", name: "Saint Vincent and the Grenadines" },
+      { code: "WSM", name: "Samoa" }, { code: "SMR", name: "San Marino" },
+      { code: "STP", name: "Sao Tome and Principe" }, { code: "SAU", name: "Saudi Arabia" },
+      { code: "SEN", name: "Senegal" }, { code: "SRB", name: "Serbia" },
+      { code: "SYC", name: "Seychelles" }, { code: "SLE", name: "Sierra Leone" },
+      { code: "SGP", name: "Singapore" }, { code: "SVK", name: "Slovakia" },
+      { code: "SVN", name: "Slovenia" }, { code: "SLB", name: "Solomon Islands" },
+      { code: "SOM", name: "Somalia" }, { code: "ZAF", name: "South Africa" },
+      { code: "SSD", name: "South Sudan" }, { code: "ESP", name: "Spain" },
+      { code: "LKA", name: "Sri Lanka" }, { code: "SDN", name: "Sudan" },
+      { code: "SUR", name: "Suriname" }, { code: "SWE", name: "Sweden" },
+      { code: "CHE", name: "Switzerland" }, { code: "SYR", name: "Syria" },
+      { code: "TWN", name: "Taiwan" }, { code: "TJK", name: "Tajikistan" },
+      { code: "TZA", name: "Tanzania" }, { code: "THA", name: "Thailand" },
+      { code: "TLS", name: "Timor-Leste" }, { code: "TGO", name: "Togo" },
+      { code: "TON", name: "Tonga" }, { code: "TTO", name: "Trinidad and Tobago" },
+      { code: "TUN", name: "Tunisia" }, { code: "TUR", name: "Turkey" },
+      { code: "TKM", name: "Turkmenistan" }, { code: "TUV", name: "Tuvalu" },
+      { code: "UGA", name: "Uganda" }, { code: "UKR", name: "Ukraine" },
+      { code: "ARE", name: "United Arab Emirates" }, { code: "GBR", name: "United Kingdom" },
+      { code: "USA", name: "United States" }, { code: "URY", name: "Uruguay" },
+      { code: "UZB", name: "Uzbekistan" }, { code: "VUT", name: "Vanuatu" },
+      { code: "VAT", name: "Vatican City" }, { code: "VEN", name: "Venezuela" },
+      { code: "VNM", name: "Vietnam" }, { code: "YEM", name: "Yemen" },
+      { code: "ZMB", name: "Zambia" }, { code: "ZWE", name: "Zimbabwe" }
+    ];
 
     const baseSelect = document.getElementById("base-currency");
     const amountInput = document.getElementById("amount");
@@ -561,6 +853,117 @@
     });
 
     initTheme();
+
+    const tabRates = document.getElementById("tab-rates");
+    const tabScreening = document.getElementById("tab-screening");
+    const ratesView = document.getElementById("rates-view");
+    const screeningView = document.getElementById("screening-view");
+
+    function activateView(view) {
+      const ratesActive = view === "rates";
+      tabRates.classList.toggle("active", ratesActive);
+      tabScreening.classList.toggle("active", !ratesActive);
+      tabRates.setAttribute("aria-selected", String(ratesActive));
+      tabScreening.setAttribute("aria-selected", String(!ratesActive));
+      ratesView.classList.toggle("hidden", !ratesActive);
+      screeningView.classList.toggle("hidden", ratesActive);
+    }
+
+    tabRates.addEventListener("click", () => activateView("rates"));
+    tabScreening.addEventListener("click", () => activateView("screening"));
+
+    const screenCurrencySelect = document.getElementById("screen-currency");
+    TARGET_CURRENCIES.forEach(code => {
+      const option = document.createElement("option");
+      option.value = code;
+      option.textContent = code;
+      screenCurrencySelect.appendChild(option);
+    });
+
+    const nationalitySelect = document.getElementById("nationality");
+    const destinationCountrySelect = document.getElementById("destination-country");
+
+    function populateCountrySelect(selectEl) {
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Select a country…";
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      selectEl.appendChild(placeholder);
+
+      COUNTRIES.forEach(country => {
+        const option = document.createElement("option");
+        option.value = country.code;
+        option.textContent = `${country.name} (${country.code})`;
+        selectEl.appendChild(option);
+      });
+    }
+
+    populateCountrySelect(nationalitySelect);
+    populateCountrySelect(destinationCountrySelect);
+
+    const screeningForm = document.getElementById("screening-form");
+    const screeningSubmit = document.getElementById("screening-submit");
+    const screeningResult = document.getElementById("screening-result");
+    const outcomeBanner = document.getElementById("outcome-banner");
+    const outcomeIcon = document.getElementById("outcome-icon");
+    const outcomeLabel = document.getElementById("outcome-label");
+    const reasonsList = document.getElementById("reasons-list");
+
+    const OUTCOME_META = {
+      CLEAR: { icon: "✓", label: "Clear", className: "outcome-clear" },
+      REVIEW: { icon: "⚠", label: "Review required", className: "outcome-review" },
+      BLOCKED: { icon: "⛔", label: "Blocked", className: "outcome-blocked" },
+      ERROR: { icon: "✕", label: "Screening failed", className: "outcome-error" }
+    };
+
+    function showScreeningResult(outcome, reasons) {
+      const meta = OUTCOME_META[outcome] || OUTCOME_META.ERROR;
+      outcomeBanner.className = `outcome-banner ${meta.className}`;
+      outcomeIcon.textContent = meta.icon;
+      outcomeLabel.textContent = meta.label;
+
+      reasonsList.innerHTML = "";
+      reasons.forEach(reason => {
+        const li = document.createElement("li");
+        li.textContent = reason;
+        reasonsList.appendChild(li);
+      });
+
+      screeningResult.classList.remove("hidden");
+    }
+
+    screeningForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      screeningSubmit.disabled = true;
+      screeningSubmit.textContent = "Screening…";
+
+      const payload = {
+        customerName: document.getElementById("customer-name").value.trim(),
+        nationality: nationalitySelect.value,
+        amount: parseFloat(document.getElementById("screen-amount").value),
+        currency: screenCurrencySelect.value,
+        destinationCountry: destinationCountrySelect.value
+      };
+
+      try {
+        const response = await fetch("/screen", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || `Request failed with status ${response.status}`);
+        }
+        showScreeningResult(data.outcome, data.reasons);
+      } catch (err) {
+        showScreeningResult("ERROR", [err.message]);
+      } finally {
+        screeningSubmit.disabled = false;
+        screeningSubmit.textContent = "Submit for screening";
+      }
+    });
 
     const chartModal = document.getElementById("chart-modal");
     const chartTitle = document.getElementById("chart-title");
