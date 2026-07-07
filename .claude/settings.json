@@ -61,7 +61,8 @@
       "Bash(curl -s -X POST http://localhost:8765/screen -H 'Content-Type: application/json' -d '{\"customerName\":\"Victor Petrov\",\"nationality\":\"GBR\",\"amount\":100,\"currency\":\"GBP\",\"destinationCountry\":\"DEU\"}')",
       "Bash(git -C /home/bram/essiell_project status --short)",
       "Bash(git -C /home/bram/essiell_project status)",
-      "Bash(git -C /home/bram/essiell_project rm --cached tests/__pycache__/conftest.cpython-312-pytest-7.4.4.pyc)"
+      "Bash(git -C /home/bram/essiell_project rm --cached tests/__pycache__/conftest.cpython-312-pytest-7.4.4.pyc)",
+      "Bash(python3 -m pytest tests/test_screen_endpoint.py -v)"
     ]
   }
 }

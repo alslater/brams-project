@@ -1,4 +1,5 @@
 import http.client
+import json
 import sys
 import threading
 from http.server import ThreadingHTTPServer
@@ -57,5 +58,26 @@ def http_get(authority: str, path: str):
         resp = conn.getresponse()
         body = resp.read()
         return resp.status, body, resp.headers
+    finally:
+        conn.close()
+
+
+def http_post_json(authority: str, path: str, payload):
+    """Issues a raw POST with a JSON body against the live_server fixture.
+
+    Returns (status, body_bytes, headers); same header semantics as http_get.
+    """
+    body_bytes = json.dumps(payload).encode()
+    conn = http.client.HTTPConnection(authority, timeout=5)
+    try:
+        conn.request(
+            "POST",
+            path,
+            body=body_bytes,
+            headers={"Content-Type": "application/json", "Content-Length": str(len(body_bytes))},
+        )
+        resp = conn.getresponse()
+        resp_body = resp.read()
+        return resp.status, resp_body, resp.headers
     finally:
         conn.close()
