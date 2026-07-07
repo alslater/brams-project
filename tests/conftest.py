@@ -30,6 +30,36 @@ class FakeUpstreamResponse:
         return False
 
 
+@pytest.fixture(autouse=True)
+def _reset_screening_settings():
+    """Restores mutable screening state after each test.
+
+    HIGH_VALUE_THRESHOLD/NAME_SIMILARITY_THRESHOLD (via /settings) and
+    SANCTIONED_COUNTRIES/WATCHLIST_COUNTRIES/NAME_WATCHLIST (via
+    /risk-lists) are all runtime-mutable, and the server module is only
+    imported once per test process, so a test that changes them would
+    otherwise leak state into every test that runs after it.
+
+    The three sets are mutated in place elsewhere (server.RISK_LISTS holds
+    references to them), so they're restored with .clear()/.update() rather
+    than reassignment, to preserve that same object identity.
+    """
+    original_threshold = server_module.HIGH_VALUE_THRESHOLD
+    original_similarity = server_module.NAME_SIMILARITY_THRESHOLD
+    original_sanctioned = set(server_module.SANCTIONED_COUNTRIES)
+    original_watchlist = set(server_module.WATCHLIST_COUNTRIES)
+    original_names = set(server_module.NAME_WATCHLIST)
+    yield
+    server_module.HIGH_VALUE_THRESHOLD = original_threshold
+    server_module.NAME_SIMILARITY_THRESHOLD = original_similarity
+    server_module.SANCTIONED_COUNTRIES.clear()
+    server_module.SANCTIONED_COUNTRIES.update(original_sanctioned)
+    server_module.WATCHLIST_COUNTRIES.clear()
+    server_module.WATCHLIST_COUNTRIES.update(original_watchlist)
+    server_module.NAME_WATCHLIST.clear()
+    server_module.NAME_WATCHLIST.update(original_names)
+
+
 @pytest.fixture
 def live_server(monkeypatch):
     """Starts the real Handler on an ephemeral port, serving from the project root."""

@@ -244,8 +244,12 @@
       max-width: none;
     }
 
-    .screening-form {
+    .screening-form, .settings-form {
       grid-template-columns: 1fr;
+    }
+
+    .settings-actions {
+      flex-direction: column;
     }
 
     select, input {
@@ -526,6 +530,112 @@
     cursor: not-allowed;
   }
 
+  .settings-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .settings-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .settings-actions .submit-btn {
+    grid-column: auto;
+    flex: 1 1 auto;
+  }
+
+  .secondary-btn {
+    flex: 1 1 auto;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .secondary-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .secondary-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .secondary-btn:disabled:hover {
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .risk-list-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 1.5rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 10px;
+    border-radius: 999px;
+    background: var(--highlight-bg);
+    color: var(--text);
+    font-size: 0.8rem;
+  }
+
+  .chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .chip-remove:hover {
+    background: rgba(220, 38, 38, 0.15);
+    color: var(--trend-down);
+  }
+
+  .add-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .add-row select, .add-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .add-row .secondary-btn {
+    flex: 0 0 auto;
+  }
+
   .screening-result.hidden {
     display: none;
   }
@@ -609,6 +719,7 @@
     <div class="view-tabs" role="tablist" aria-label="View selector">
       <button type="button" id="tab-rates" class="view-tab active" role="tab" aria-selected="true" aria-controls="rates-view">Exchange Rates</button>
       <button type="button" id="tab-screening" class="view-tab" role="tab" aria-selected="false" aria-controls="screening-view">Screening</button>
+      <button type="button" id="tab-settings" class="view-tab" role="tab" aria-selected="false" aria-controls="settings-view">Screening Settings</button>
     </div>
 
     <div id="rates-view" class="view-panel">
@@ -689,6 +800,52 @@
         </div>
       </div>
     </div>
+
+    <div id="settings-view" class="view-panel hidden">
+      <p class="subtitle">Adjust the thresholds used when screening transactions on the Screening tab.</p>
+      <form id="settings-form" class="settings-form">
+        <div class="settings-actions">
+          <button type="submit" class="submit-btn" id="settings-save" disabled>Save settings</button>
+          <button type="button" class="secondary-btn" id="settings-reset" disabled>Reset to defaults</button>
+        </div>
+        <div class="field">
+          <label for="setting-high-value-threshold">High-value amount threshold (GBP)</label>
+          <input type="number" id="setting-high-value-threshold" min="1" max="1000000" step="1" required>
+        </div>
+        <div class="field">
+          <label for="setting-similarity-threshold">Name similarity threshold (%)</label>
+          <input type="number" id="setting-similarity-threshold" min="50" max="100" step="1" required>
+        </div>
+      </form>
+      <p class="status" id="settings-status"></p>
+
+      <div class="risk-list-section">
+        <h3 class="reasons-heading">Sanctioned countries</h3>
+        <div class="chip-list" id="sanctionedCountries-list"></div>
+        <div class="add-row">
+          <select id="sanctionedCountries-add-select"></select>
+          <button type="button" class="secondary-btn" id="sanctionedCountries-add-btn">Add</button>
+        </div>
+      </div>
+
+      <div class="risk-list-section">
+        <h3 class="reasons-heading">Watchlist countries</h3>
+        <div class="chip-list" id="watchlistCountries-list"></div>
+        <div class="add-row">
+          <select id="watchlistCountries-add-select"></select>
+          <button type="button" class="secondary-btn" id="watchlistCountries-add-btn">Add</button>
+        </div>
+      </div>
+
+      <div class="risk-list-section">
+        <h3 class="reasons-heading">Name watchlist</h3>
+        <div class="chip-list" id="nameWatchlist-list"></div>
+        <div class="add-row">
+          <input type="text" id="nameWatchlist-add-input" placeholder="e.g. Mallory Black" autocomplete="off">
+          <button type="button" class="secondary-btn" id="nameWatchlist-add-btn">Add</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="modal-backdrop hidden" id="chart-modal">
@@ -701,6 +858,22 @@
         <button type="button" class="modal-close" id="chart-close" aria-label="Close chart">×</button>
       </div>
       <div id="chart-body"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="unsaved-changes-modal">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="unsaved-changes-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="unsaved-changes-title">Unsaved changes</h2>
+          <p class="modal-subtitle">You have unsaved changes to the screening settings.</p>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button type="button" class="submit-btn" id="unsaved-changes-save">Save and continue</button>
+        <button type="button" class="secondary-btn" id="unsaved-changes-discard">Discard changes</button>
+        <button type="button" class="secondary-btn" id="unsaved-changes-cancel">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -854,23 +1027,45 @@
 
     initTheme();
 
-    const tabRates = document.getElementById("tab-rates");
-    const tabScreening = document.getElementById("tab-screening");
-    const ratesView = document.getElementById("rates-view");
-    const screeningView = document.getElementById("screening-view");
+    const VIEWS = {
+      rates: { tab: document.getElementById("tab-rates"), panel: document.getElementById("rates-view") },
+      screening: { tab: document.getElementById("tab-screening"), panel: document.getElementById("screening-view") },
+      settings: { tab: document.getElementById("tab-settings"), panel: document.getElementById("settings-view") }
+    };
 
     function activateView(view) {
-      const ratesActive = view === "rates";
-      tabRates.classList.toggle("active", ratesActive);
-      tabScreening.classList.toggle("active", !ratesActive);
-      tabRates.setAttribute("aria-selected", String(ratesActive));
-      tabScreening.setAttribute("aria-selected", String(!ratesActive));
-      ratesView.classList.toggle("hidden", !ratesActive);
-      screeningView.classList.toggle("hidden", ratesActive);
+      Object.entries(VIEWS).forEach(([key, { tab, panel }]) => {
+        const active = key === view;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+        panel.classList.toggle("hidden", !active);
+      });
+
+      if (view === "settings") {
+        refreshSettingsTab();
+      }
     }
 
-    tabRates.addEventListener("click", () => activateView("rates"));
-    tabScreening.addEventListener("click", () => activateView("screening"));
+    // Routes every tab click through here instead of calling activateView
+    // directly, so leaving the Screening Settings tab with unsaved changes
+    // (Save settings enabled) can be intercepted with a confirmation prompt.
+    function requestViewChange(view) {
+      const leavingDirtySettings =
+        VIEWS.settings.tab.classList.contains("active") &&
+        view !== "settings" &&
+        !settingsSave.disabled;
+
+      if (leavingDirtySettings) {
+        openUnsavedChangesModal(view);
+        return;
+      }
+
+      activateView(view);
+    }
+
+    VIEWS.rates.tab.addEventListener("click", () => requestViewChange("rates"));
+    VIEWS.screening.tab.addEventListener("click", () => requestViewChange("screening"));
+    VIEWS.settings.tab.addEventListener("click", () => requestViewChange("settings"));
 
     const screenCurrencySelect = document.getElementById("screen-currency");
     TARGET_CURRENCIES.forEach(code => {
@@ -965,6 +1160,331 @@
       }
     });
 
+    const DEFAULT_HIGH_VALUE_THRESHOLD = 5000;
+    const DEFAULT_SIMILARITY_THRESHOLD_PERCENT = 85;
+    const DEFAULT_RISK_LISTS = {
+      sanctionedCountries: ["PRK", "IRN", "SYR", "CUB", "RUS", "BLR"],
+      watchlistCountries: ["AFG", "MMR", "VEN", "YEM"],
+      nameWatchlist: [
+        "john doe", "jane smith", "viktor petrov", "anna kozlov", "hassan rahimi",
+        "carlos fuentes-vega", "li wei chen", "olga morozova", "ahmed al-rashid",
+        "dimitri volkov", "fatima al-zahra", "boris yanovich"
+      ]
+    };
+
+    const RISK_LIST_KEYS = ["sanctionedCountries", "watchlistCountries", "nameWatchlist"];
+    const COUNTRY_RISK_LISTS = new Set(["sanctionedCountries", "watchlistCountries"]);
+    const COUNTRY_NAME_BY_CODE = Object.fromEntries(COUNTRIES.map(c => [c.code, c.name]));
+
+    // Reset to defaults stays greyed out unless the current state actually
+    // differs from these — comparable in shape to snapshotCurrentState().
+    const DEFAULT_STATE = {
+      highValueThreshold: String(DEFAULT_HIGH_VALUE_THRESHOLD),
+      similarityPercent: String(DEFAULT_SIMILARITY_THRESHOLD_PERCENT),
+      riskLists: Object.fromEntries(
+        RISK_LIST_KEYS.map(key => [key, [...DEFAULT_RISK_LISTS[key]].sort()])
+      )
+    };
+
+    // Everything on this tab — thresholds and all three risk lists — is
+    // staged here in memory. Chip add/remove buttons only edit this object
+    // and re-render; nothing reaches the server until Save settings (or
+    // Reset to defaults, which stages the defaults then saves immediately)
+    // is clicked, at which point it's all committed together.
+    let pendingRiskLists = { sanctionedCountries: [], watchlistCountries: [], nameWatchlist: [] };
+
+    // The last state actually confirmed saved (or freshly loaded) on the
+    // server, used to decide whether Save settings should be enabled.
+    let lastSavedState = null;
+
+    const settingsForm = document.getElementById("settings-form");
+    const settingsSave = document.getElementById("settings-save");
+    const settingsReset = document.getElementById("settings-reset");
+    const settingsStatus = document.getElementById("settings-status");
+    const highValueThresholdInput = document.getElementById("setting-high-value-threshold");
+    const similarityThresholdInput = document.getElementById("setting-similarity-threshold");
+
+    function setSettingsStatus(message, isError) {
+      settingsStatus.textContent = message;
+      settingsStatus.classList.toggle("error", Boolean(isError));
+    }
+
+    function applySettingsToForm(settings) {
+      highValueThresholdInput.value = settings.highValueThreshold;
+      similarityThresholdInput.value = Math.round(settings.nameSimilarityThreshold * 100);
+    }
+
+    function snapshotCurrentState() {
+      return {
+        highValueThreshold: highValueThresholdInput.value,
+        similarityPercent: similarityThresholdInput.value,
+        riskLists: Object.fromEntries(
+          RISK_LIST_KEYS.map(key => [key, [...pendingRiskLists[key]].sort()])
+        )
+      };
+    }
+
+    function statesAreEqual(a, b) {
+      if (!a || !b) return false;
+      if (a.highValueThreshold !== b.highValueThreshold) return false;
+      if (a.similarityPercent !== b.similarityPercent) return false;
+      return RISK_LIST_KEYS.every(key => {
+        const listA = a.riskLists[key];
+        const listB = b.riskLists[key];
+        return listA.length === listB.length && listA.every((v, i) => v === listB[i]);
+      });
+    }
+
+    // Save settings stays greyed out until something actually differs from
+    // the last-loaded/last-saved state; Reset to defaults stays greyed out
+    // until something differs from the original defaults. Both are
+    // re-evaluated together whenever anything on the tab changes.
+    function updateDirtyState() {
+      const current = snapshotCurrentState();
+      settingsSave.disabled = statesAreEqual(current, lastSavedState);
+      settingsReset.disabled = statesAreEqual(current, DEFAULT_STATE);
+    }
+
+    function markStateAsSaved() {
+      lastSavedState = snapshotCurrentState();
+      updateDirtyState();
+    }
+
+    highValueThresholdInput.addEventListener("input", updateDirtyState);
+    similarityThresholdInput.addEventListener("input", updateDirtyState);
+
+    function chipLabel(listKey, value) {
+      if (COUNTRY_RISK_LISTS.has(listKey)) {
+        const name = COUNTRY_NAME_BY_CODE[value];
+        return name ? `${name} (${value})` : value;
+      }
+      return value.replace(/\b\w/g, ch => ch.toUpperCase());
+    }
+
+    function renderRiskList(listKey) {
+      const values = pendingRiskLists[listKey];
+      const container = document.getElementById(`${listKey}-list`);
+      container.innerHTML = "";
+
+      if (!values.length) {
+        const empty = document.createElement("span");
+        empty.className = "trend-flat";
+        empty.textContent = "No entries.";
+        container.appendChild(empty);
+        return;
+      }
+
+      values.forEach(value => {
+        const label = chipLabel(listKey, value);
+        const chip = document.createElement("span");
+        chip.className = "chip";
+
+        const text = document.createElement("span");
+        text.textContent = label;
+        chip.appendChild(text);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "chip-remove";
+        removeBtn.setAttribute("aria-label", `Remove ${label}`);
+        removeBtn.textContent = "×";
+        removeBtn.addEventListener("click", () => {
+          pendingRiskLists[listKey] = pendingRiskLists[listKey].filter(v => v !== value);
+          renderRiskList(listKey);
+          updateDirtyState();
+        });
+        chip.appendChild(removeBtn);
+
+        container.appendChild(chip);
+      });
+    }
+
+    function renderAllRiskLists() {
+      RISK_LIST_KEYS.forEach(renderRiskList);
+    }
+
+    function addToPendingList(listKey, value) {
+      if (!pendingRiskLists[listKey].includes(value)) {
+        pendingRiskLists[listKey] = [...pendingRiskLists[listKey], value];
+        renderRiskList(listKey);
+        updateDirtyState();
+      }
+    }
+
+    async function loadSettings() {
+      setSettingsStatus("Loading current settings…", false);
+      try {
+        const response = await fetch("/settings");
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        applySettingsToForm(await response.json());
+        setSettingsStatus("", false);
+      } catch (err) {
+        setSettingsStatus(`Could not load settings: ${err.message}`, true);
+      }
+    }
+
+    async function loadRiskLists() {
+      try {
+        const response = await fetch("/risk-lists");
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        RISK_LIST_KEYS.forEach(listKey => {
+          pendingRiskLists[listKey] = [...(data[listKey] || [])];
+        });
+        renderAllRiskLists();
+      } catch (err) {
+        setSettingsStatus(`Could not load risk lists: ${err.message}`, true);
+      }
+    }
+
+    // Loads both thresholds and risk lists, then takes the post-load state
+    // as the new baseline — Save settings starts greyed out until the user
+    // actually changes something relative to this baseline.
+    async function refreshSettingsTab() {
+      await Promise.all([loadSettings(), loadRiskLists()]);
+      markStateAsSaved();
+    }
+
+    // Commits everything currently staged — thresholds plus all three risk
+    // lists — to the server in one operation. Used by both Save settings
+    // (with whatever's in the form/chips) and Reset to defaults (after
+    // first staging the default values).
+    async function commitSettings(highValueThreshold, similarityPercent) {
+      settingsSave.disabled = true;
+      settingsReset.disabled = true;
+      setSettingsStatus("Saving…", false);
+
+      try {
+        const settingsResponse = await fetch("/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            highValueThreshold,
+            nameSimilarityThreshold: similarityPercent / 100
+          })
+        });
+        const settingsData = await settingsResponse.json();
+        if (!settingsResponse.ok) {
+          throw new Error(settingsData.error || `Request failed with status ${settingsResponse.status}`);
+        }
+        applySettingsToForm(settingsData);
+
+        let riskListsData = null;
+        for (const listKey of RISK_LIST_KEYS) {
+          const response = await fetch("/risk-lists", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ list: listKey, values: pendingRiskLists[listKey] })
+          });
+          riskListsData = await response.json();
+          if (!response.ok) {
+            throw new Error(riskListsData.error || `Request failed with status ${response.status}`);
+          }
+        }
+        if (riskListsData) {
+          RISK_LIST_KEYS.forEach(listKey => {
+            pendingRiskLists[listKey] = [...(riskListsData[listKey] || [])];
+          });
+          renderAllRiskLists();
+        }
+
+        setSettingsStatus("Settings saved.", false);
+        markStateAsSaved();
+        return true;
+      } catch (err) {
+        setSettingsStatus(`Could not save settings: ${err.message}`, true);
+        updateDirtyState();
+        return false;
+      }
+    }
+
+    settingsForm.addEventListener("submit", e => {
+      e.preventDefault();
+      commitSettings(
+        parseFloat(highValueThresholdInput.value),
+        parseFloat(similarityThresholdInput.value)
+      );
+    });
+
+    settingsReset.addEventListener("click", () => {
+      highValueThresholdInput.value = DEFAULT_HIGH_VALUE_THRESHOLD;
+      similarityThresholdInput.value = DEFAULT_SIMILARITY_THRESHOLD_PERCENT;
+      RISK_LIST_KEYS.forEach(listKey => {
+        pendingRiskLists[listKey] = [...DEFAULT_RISK_LISTS[listKey]];
+      });
+      renderAllRiskLists();
+      commitSettings(DEFAULT_HIGH_VALUE_THRESHOLD, DEFAULT_SIMILARITY_THRESHOLD_PERCENT);
+    });
+
+    const unsavedChangesModal = document.getElementById("unsaved-changes-modal");
+    const unsavedChangesSave = document.getElementById("unsaved-changes-save");
+    const unsavedChangesDiscard = document.getElementById("unsaved-changes-discard");
+    const unsavedChangesCancel = document.getElementById("unsaved-changes-cancel");
+    let pendingNavigationView = null;
+
+    function openUnsavedChangesModal(targetView) {
+      pendingNavigationView = targetView;
+      unsavedChangesModal.classList.remove("hidden");
+    }
+
+    function closeUnsavedChangesModal() {
+      unsavedChangesModal.classList.add("hidden");
+      pendingNavigationView = null;
+    }
+
+    unsavedChangesCancel.addEventListener("click", closeUnsavedChangesModal);
+    unsavedChangesModal.addEventListener("click", e => {
+      if (e.target === unsavedChangesModal) closeUnsavedChangesModal();
+    });
+
+    unsavedChangesDiscard.addEventListener("click", () => {
+      const targetView = pendingNavigationView;
+      closeUnsavedChangesModal();
+      if (targetView) activateView(targetView);
+    });
+
+    unsavedChangesSave.addEventListener("click", async () => {
+      const targetView = pendingNavigationView;
+      closeUnsavedChangesModal();
+      const saved = await commitSettings(
+        parseFloat(highValueThresholdInput.value),
+        parseFloat(similarityThresholdInput.value)
+      );
+      if (saved && targetView) activateView(targetView);
+    });
+
+    const sanctionedAddSelect = document.getElementById("sanctionedCountries-add-select");
+    const watchlistAddSelect = document.getElementById("watchlistCountries-add-select");
+    populateCountrySelect(sanctionedAddSelect);
+    populateCountrySelect(watchlistAddSelect);
+
+    document.getElementById("sanctionedCountries-add-btn").addEventListener("click", () => {
+      if (sanctionedAddSelect.value) {
+        addToPendingList("sanctionedCountries", sanctionedAddSelect.value);
+        sanctionedAddSelect.value = "";
+      }
+    });
+
+    document.getElementById("watchlistCountries-add-btn").addEventListener("click", () => {
+      if (watchlistAddSelect.value) {
+        addToPendingList("watchlistCountries", watchlistAddSelect.value);
+        watchlistAddSelect.value = "";
+      }
+    });
+
+    const nameWatchlistAddInput = document.getElementById("nameWatchlist-add-input");
+    document.getElementById("nameWatchlist-add-btn").addEventListener("click", () => {
+      const value = nameWatchlistAddInput.value.trim();
+      if (value) {
+        addToPendingList("nameWatchlist", value.toLowerCase());
+        nameWatchlistAddInput.value = "";
+      }
+    });
+
     const chartModal = document.getElementById("chart-modal");
     const chartTitle = document.getElementById("chart-title");
     const chartBody = document.getElementById("chart-body");
@@ -983,8 +1503,11 @@
       if (e.target === chartModal) closeChartModal();
     });
     document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !chartModal.classList.contains("hidden")) {
+      if (e.key !== "Escape") return;
+      if (!chartModal.classList.contains("hidden")) {
         closeChartModal();
+      } else if (!unsavedChangesModal.classList.contains("hidden")) {
+        closeUnsavedChangesModal();
       }
     });
 

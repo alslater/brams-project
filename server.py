@@ -5,6 +5,7 @@ import json
 import math
 import re
 import sys
+import threading
 import urllib.request
 import urllib.error
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -61,6 +62,41 @@ NAME_WATCHLIST = {
     "boris yanovich",
 }
 
+# Maps the API-facing list name to the actual set object. These sets are
+# mutated in place (via .clear()/.update()) by replace_risk_list(), guarded
+# by RISK_LISTS_LOCK, rather than reassigned — screen_transaction() reads
+# SANCTIONED_COUNTRIES/WATCHLIST_COUNTRIES/NAME_WATCHLIST directly, and
+# in-place mutation means those reads always see the current entries without
+# needing `global` rebinding.
+RISK_LISTS = {
+    "sanctionedCountries": SANCTIONED_COUNTRIES,
+    "watchlistCountries": WATCHLIST_COUNTRIES,
+    "nameWatchlist": NAME_WATCHLIST,
+}
+RISK_LISTS_LOCK = threading.Lock()
+MAX_RISK_LIST_ENTRIES = 200
+
+
+def get_risk_lists():
+    with RISK_LISTS_LOCK:
+        return {key: sorted(values) for key, values in RISK_LISTS.items()}
+
+
+def replace_risk_list(list_key, values):
+    """Replaces the entire contents of one risk list, in place.
+
+    Used by POST /risk-lists so that Save settings / Reset to defaults on
+    the Screening Settings tab can commit a whole edited list — including
+    removals — in a single call, rather than one add/remove round-trip per
+    entry.
+    """
+    with RISK_LISTS_LOCK:
+        target_set = RISK_LISTS[list_key]
+        target_set.clear()
+        target_set.update(values)
+        return {key: sorted(vals) for key, vals in RISK_LISTS.items()}
+
+
 # Below 1.0 (exact match), a name is flagged as merely "similar" to a watch
 # list entry — e.g. a typo, transliteration, or partial match — and sent to
 # REVIEW rather than auto-blocked, since it isn't a confirmed match.
@@ -89,10 +125,62 @@ def find_name_watchlist_match(name_norm):
 # transaction is screened on its GBP equivalent, regardless of the currency
 # it was submitted in, so a foreign-currency amount can't dodge the check.
 # Exceeding this threshold always escalates the result to at least REVIEW.
+#
+# HIGH_VALUE_THRESHOLD and NAME_SIMILARITY_THRESHOLD are runtime-adjustable
+# via GET/POST /settings (see the Screening Settings tab) — they're mutated
+# in place through update_settings(), guarded by SETTINGS_LOCK since the
+# server handles requests on multiple threads.
 LOCAL_CURRENCY = "GBP"
 HIGH_VALUE_THRESHOLD = 5000
 MAX_TEXT_FIELD_LENGTH = 200
 MAX_SCREEN_BODY_BYTES = 10_000
+MAX_SETTINGS_BODY_BYTES = 2_000
+
+MIN_HIGH_VALUE_THRESHOLD = 1
+MAX_HIGH_VALUE_THRESHOLD = 1_000_000
+MIN_SIMILARITY_THRESHOLD = 0.5
+MAX_SIMILARITY_THRESHOLD = 1.0
+
+SETTINGS_LOCK = threading.Lock()
+
+
+def is_valid_high_value_threshold(value):
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and MIN_HIGH_VALUE_THRESHOLD <= value <= MAX_HIGH_VALUE_THRESHOLD
+    )
+
+
+def is_valid_similarity_threshold(value):
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and MIN_SIMILARITY_THRESHOLD <= value <= MAX_SIMILARITY_THRESHOLD
+    )
+
+
+def get_settings():
+    with SETTINGS_LOCK:
+        return {
+            "highValueThreshold": HIGH_VALUE_THRESHOLD,
+            "nameSimilarityThreshold": NAME_SIMILARITY_THRESHOLD,
+        }
+
+
+def update_settings(high_value_threshold=None, similarity_threshold=None):
+    global HIGH_VALUE_THRESHOLD, NAME_SIMILARITY_THRESHOLD
+    with SETTINGS_LOCK:
+        if high_value_threshold is not None:
+            HIGH_VALUE_THRESHOLD = float(high_value_threshold)
+        if similarity_threshold is not None:
+            NAME_SIMILARITY_THRESHOLD = float(similarity_threshold)
+        return {
+            "highValueThreshold": HIGH_VALUE_THRESHOLD,
+            "nameSimilarityThreshold": NAME_SIMILARITY_THRESHOLD,
+        }
 
 
 def convert_to_local_currency(amount, currency):
@@ -189,6 +277,14 @@ class Handler(SimpleHTTPRequestHandler):
             self.handle_history(parse_qs(parsed.query))
             return
 
+        if parsed.path == "/settings":
+            self.handle_get_settings()
+            return
+
+        if parsed.path == "/risk-lists":
+            self.handle_get_risk_lists()
+            return
+
         super().do_GET()
 
     def do_POST(self):
@@ -198,7 +294,135 @@ class Handler(SimpleHTTPRequestHandler):
             self.handle_screen()
             return
 
+        if parsed.path == "/settings":
+            self.handle_update_settings()
+            return
+
+        if parsed.path == "/risk-lists":
+            self.handle_update_risk_list()
+            return
+
         self.send_json_error(404, "not found")
+
+    def handle_get_risk_lists(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(get_risk_lists()).encode())
+
+    def handle_update_risk_list(self):
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        if length <= 0 or length > MAX_SETTINGS_BODY_BYTES:
+            self.send_json_error(400, "invalid request body")
+            return
+
+        try:
+            payload = json.loads(self.rfile.read(length))
+        except json.JSONDecodeError:
+            self.send_json_error(400, "invalid JSON body")
+            return
+
+        if not isinstance(payload, dict):
+            self.send_json_error(400, "invalid request body")
+            return
+
+        list_key = payload.get("list")
+        raw_values = payload.get("values")
+
+        if list_key not in RISK_LISTS:
+            self.send_json_error(400, f"list must be one of: {', '.join(RISK_LISTS)}")
+            return
+
+        if not isinstance(raw_values, list):
+            self.send_json_error(400, "values must be a list")
+            return
+
+        if len(raw_values) > MAX_RISK_LIST_ENTRIES:
+            self.send_json_error(400, f"values must contain at most {MAX_RISK_LIST_ENTRIES} entries")
+            return
+
+        normalized_values = []
+        for raw_value in raw_values:
+            if not isinstance(raw_value, str) or not raw_value.strip():
+                self.send_json_error(400, "each value must be a non-empty string")
+                return
+
+            if list_key == "nameWatchlist":
+                if len(raw_value) > MAX_TEXT_FIELD_LENGTH:
+                    self.send_json_error(400, "value exceeds maximum length")
+                    return
+                normalized_values.append(raw_value.strip().lower())
+            else:
+                value = raw_value.strip().upper()
+                if not is_valid_country_code(value):
+                    self.send_json_error(400, f"invalid country code: {raw_value}")
+                    return
+                normalized_values.append(value)
+
+        updated = replace_risk_list(list_key, normalized_values)
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(updated).encode())
+
+    def handle_get_settings(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(get_settings()).encode())
+
+    def handle_update_settings(self):
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        if length <= 0 or length > MAX_SETTINGS_BODY_BYTES:
+            self.send_json_error(400, "invalid request body")
+            return
+
+        try:
+            payload = json.loads(self.rfile.read(length))
+        except json.JSONDecodeError:
+            self.send_json_error(400, "invalid JSON body")
+            return
+
+        if not isinstance(payload, dict):
+            self.send_json_error(400, "invalid request body")
+            return
+
+        high_value_threshold = None
+        similarity_threshold = None
+
+        if "highValueThreshold" in payload:
+            value = payload["highValueThreshold"]
+            if not is_valid_high_value_threshold(value):
+                self.send_json_error(
+                    400,
+                    f"highValueThreshold must be a number between "
+                    f"{MIN_HIGH_VALUE_THRESHOLD} and {MAX_HIGH_VALUE_THRESHOLD}",
+                )
+                return
+            high_value_threshold = value
+
+        if "nameSimilarityThreshold" in payload:
+            value = payload["nameSimilarityThreshold"]
+            if not is_valid_similarity_threshold(value):
+                self.send_json_error(
+                    400,
+                    f"nameSimilarityThreshold must be a number between "
+                    f"{MIN_SIMILARITY_THRESHOLD} and {MAX_SIMILARITY_THRESHOLD}",
+                )
+                return
+            similarity_threshold = value
+
+        if high_value_threshold is None and similarity_threshold is None:
+            self.send_json_error(400, "no valid settings provided")
+            return
+
+        updated = update_settings(high_value_threshold, similarity_threshold)
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(updated).encode())
 
     def handle_screen(self):
         length = int(self.headers.get("Content-Length", 0) or 0)

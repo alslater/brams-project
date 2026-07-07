@@ -62,7 +62,21 @@
       "Bash(git -C /home/bram/essiell_project status --short)",
       "Bash(git -C /home/bram/essiell_project status)",
       "Bash(git -C /home/bram/essiell_project rm --cached tests/__pycache__/conftest.cpython-312-pytest-7.4.4.pyc)",
-      "Bash(python3 -m pytest tests/test_screen_endpoint.py -v)"
+      "Bash(python3 -m pytest tests/test_screen_endpoint.py -v)",
+      "Bash(python3 -m pytest tests/test_settings_endpoint.py -v)",
+      "Bash(curl -s http://localhost:8765/settings)",
+      "Bash(curl -s -X POST http://localhost:8765/settings -H \"Content-Type: application/json\" -d '{\"highValueThreshold\": 8000}')",
+      "Bash(curl -s -X POST http://localhost:8765/screen -H 'Content-Type: application/json' -d '{\"customerName\":\"Alice Wong\",\"nationality\":\"GBR\",\"amount\":6000,\"currency\":\"GBP\",\"destinationCountry\":\"DEU\"}')",
+      "Bash(curl -s -X POST http://localhost:8765/settings -H \"Content-Type: application/json\" -d '{\"highValueThreshold\": 5000, \"nameSimilarityThreshold\": 0.85}')",
+      "Bash(python3 -m pytest tests/test_risk_lists_endpoint.py -v)",
+      "Bash(curl -s http://localhost:8765/risk-lists)",
+      "Bash(curl -s -X POST http://localhost:8765/risk-lists -H 'Content-Type: application/json' -d '{\"list\":\"sanctionedCountries\",\"action\":\"add\",\"value\":\"fra\"}')",
+      "Bash(curl -s -X POST http://localhost:8765/screen -H 'Content-Type: application/json' -d '{\"customerName\":\"Alice Wong\",\"nationality\":\"GBR\",\"amount\":100,\"currency\":\"GBP\",\"destinationCountry\":\"FRA\"}')",
+      "Bash(curl -s -X POST http://localhost:8765/risk-lists -H 'Content-Type: application/json' -d '{\"list\":\"sanctionedCountries\",\"action\":\"remove\",\"value\":\"FRA\"}')",
+      "Bash(curl -s -X POST http://localhost:8765/risk-lists -H 'Content-Type: application/json' -d '{\"list\":\"sanctionedCountries\",\"values\":[\"IRN\",\"FRA\"]}')",
+      "Bash(curl -s -X POST http://localhost:8765/risk-lists -H 'Content-Type: application/json' -d '{\"list\":\"watchlistCountries\",\"values\":[\"AFG\",\"MMR\",\"YEM\",\"ESP\"]}')",
+      "Bash(curl -s -X POST http://localhost:8765/settings -H 'Content-Type: application/json' -d '{\"highValueThreshold\": 7500, \"nameSimilarityThreshold\": 0.9}')",
+      "Bash(curl -s -X POST http://localhost:8765/screen -H 'Content-Type: application/json' -d '{\"customerName\":\"Alice\",\"nationality\":\"GBR\",\"amount\":100,\"currency\":\"GBP\",\"destinationCountry\":\"PRK\"}')"
     ]
   }
 }
